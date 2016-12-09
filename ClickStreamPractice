@@ -1,0 +1,688 @@
+#####################
+### Data Cleaning ###
+#####################
+
+### Libraries
+library(stringr)
+library(reshape)
+library(dplyr)
+library(plyr)
+library(data.table)
+library(splitstackshape)
+library(doBy)
+library(ggplot2)
+library(foreign)
+library(randomNames)
+
+
+### Setting Working Directory ###
+
+setwd("Z:/Private/Internal/Clients/Coursera/Practice Clickstream")
+#setwd("Y:/Private/Internal/Clients/Coursera/Practice Clickstream")
+
+
+### Calling and Exploring Data ###
+
+MainData = read.csv("video-2016-10-21_2.csv", sep =",")
+str(MainData)
+names(MainData)
+length(unique(MainData$illinois_user_id))
+
+### Cleaning Data ###
+
+### Objective: 
+### Have the data ready to show the average number of minutes watching a video
+
+## Including the time stamp
+class(MainData$server_timestamp)
+MainData$server_timestamp = as.character(MainData$server_timestamp)
+MainData$server_timestamp = as.POSIXct(strptime(MainData$server_timestamp, "%m/%d/%y %H:%M")) 
+
+testtime = as.POSIXct(strptime(MainData$server_timestamp, "%m/%d/%y %H:%M:%S"))
+
+## Creating a variable replacing playback_rate_delta
+#MainData$NewPlaybackRateDelta[MainData$playback_rate_delta == "{\\playback_rate_delta\\\":\\\"\\\""] = NA
+MainData$NewPlaybackRateDelta[MainData$playback_rate_delta == "{\\playback_rate_delta\\\":\\\"-0.25\\\""] = -0.25
+MainData$NewPlaybackRateDelta[MainData$playback_rate_delta == "{\\playback_rate_delta\\\":\\\"-1\\\""] = -1
+MainData$NewPlaybackRateDelta[MainData$playback_rate_delta == "{\\playback_rate_delta\\\":\\\"0.25\\\""] = 0.25
+MainData$NewPlaybackRateDelta[MainData$playback_rate_delta == "{\\playback_rate_delta\\\":\\\"0\\\""] = 0
+MainData$NewPlaybackRateDelta[MainData$playback_rate_delta == "{\\playback_rate_delta\\\":\\\"1\\\""] = 1
+
+
+## Creating a variable replacing playback_rate_delta
+#MainData$NewPlaybackRate[MainData$playback_rate == "\\\"playback_rate\\\":\\\"\\\"" ] = NA
+MainData$NewPlaybackRate[MainData$playback_rate == "\\\"playback_rate\\\":\\\"0.75\\\""] = 0.75
+MainData$NewPlaybackRate[MainData$playback_rate == "\\\"playback_rate\\\":\\\"1.25\\\""] = 1.25
+MainData$NewPlaybackRate[MainData$playback_rate == "\\\"playback_rate\\\":\\\"1.5\\\""] = 1.5
+MainData$NewPlaybackRate[MainData$playback_rate == "\\\"playback_rate\\\":\\\"1.75\\\""] = 1.75
+MainData$NewPlaybackRate[MainData$playback_rate == "\\\"playback_rate\\\":\\\"1\\\""] = 1
+MainData$NewPlaybackRate[MainData$playback_rate == "\\\"playback_rate\\\":\\\"2\\\""] = 2
+
+
+## Creating a variable replacing video name
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.1.1. Some Books on Data Visualization\\\""] = "1.1.1. Some Books on Data Visualization"            
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.1.2. Overview of Visualization\\\""] = "1.1.2. Overview of Visualization"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.2.1. 2-D Graphics\\\""] = "1.2.1. 2-D Graphics"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.2.2. 2-D Drawing\\\""] = "1.2.2. 2-D Drawing"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.2.3. 3-D Graphics\\\""] = "1.2.3. 3-D Graphics"                               
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.2.4. Photorealism\\\""] = "1.2.4. Photorealism"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.2.5. Non-Photorealism\\\""] = "1.2.5. Non-Photorealism"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.3.1. The Human\\\""] = "1.3.1. The Human"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.3.2. Memory\\\""] = "1.3.2. Memory"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.3.3. Reasoning\\\""] = "1.3.3. Reasoning"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.3.4. The Human Retina\\\""] = "1.3.4. The Human Retina"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.3.5. Perceiving Two Dimensions\\\""] = "1.3.5. Perceiving Two Dimensions"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"1.3.6. Perceiving Perspective\\\""] = "1.3.6. Perceiving Perspective"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.1.1. Data\\\""] = "2.1.1. Data"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.1.2. Mapping\\\""] = "2.1.2. Mapping"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.1.3. Charts\\\""] = "2.1.3. Charts"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.2.1. Glyphs (Part 1)\\\""] = "2.2.1. Glyphs Part 1"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.2.1. Glyphs (Part 2)\\\""] = "2.2.1. Glyphs Part 2"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.2.2. Parallel Coordinates\\\""] = "2.2.2. Parallel Coordinates"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.2.3. Stacked Graphs (Part 1)\\\""] = "2.2.3. Stacked Graphs Part 1"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.2.3. Stacked Graphs (Part 2)\\\""] = "2.2.3. Stacked Graphs Part 2"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.3.1. Tufte's Design Rules\\\""] = "2.3.1. Tufte's Design Rules"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"2.3.2. Using Color\\\""] = "2.3.2. Using Color"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"3.1.1. Graphs and Networks\\\""] = "3.1.1. Graphs and Networks"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"3.1.2. Embedding Planar Graphs\\\""] = "3.1.2. Embedding Planar Graphs"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"3.1.3. Graph Visualization\\\""] = "3.1.3. Graph Visualization"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"3.1.4. Tree Maps\\\""] = "3.1.4. Tree Maps"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"3.2.1. Principal Component Analysis\\\""] = "3.2.1. Principal Component Analysis"                
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"3.2.2. Multidimensional Scaling\\\""] = "3.2.2. Multidimensional Scaling"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"3.3.1. Packing\\\""] = "3.3.1. Packing"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.1.1. Visualization Systems\\\""] = "4.1.1. Visualization Systems"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.1.2. The Information Visualization Mantra: Part 1\\\""] = "4.1.2. The Information Visualization Mantra Part 1"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.1.2. The Information Visualization Mantra: Part 2\\\""] = "4.1.2. The Information Visualization Mantra: Part 2"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.1.2. The Information Visualization Mantra: Part 3\\\""] = "4.1.2. The Information Visualization Mantra: Part 3"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.1.3. Database Visualization Part: 1\\\""] = "4.1.3. Database Visualization Part 1"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.1.3. Database Visualization Part: 2\\\""] = "4.1.3. Database Visualization Part 2"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.1.3. Database Visualization Part: 3\\\""] = "4.1.3. Database Visualization Part 3"              
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"4.2.1. Visualization System Design\\\""] = "4.2.1. Visualization System Design"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"SVG-example\\\""] = "SVG-example"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"Week 1 Introduction\\\""] = "Week 1 Introduction"
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"Week 2 Introduction\\\""] = "Week 2 Introduction"                                
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"Week 3 Introduction\\\""] = "Week 3 Introduction"                                
+MainData$NewVideoName[MainData$video_name == "\\\"video_name\\\":\\\"Week 4 Introduction\\\""] = "Week 4 Introduction"   
+
+
+#videonames
+video_names <- c("1.1.1. Some Books on Data Visualization", "1.1.2. Overview of Visualization",  "1.2.1. 2-D Graphics",  "1.2.2. 2-D Drawing",
+                        "1.2.3. 3-D Graphics",   "1.2.4. Photorealism", "1.2.5. Non-Photorealism",   "1.3.1. The Human", "1.3.2. Memory",
+                        "1.3.3. Reasoning",  "1.3.4. The Human Retina",      "1.3.5. Perceiving Two Dimensions",   "1.3.6. Perceiving Perspective",
+                        "2.1.1. Data",  "2.1.2. Mapping",   "2.1.3. Charts",  "2.2.1. Glyphs Part 1",  "2.2.1. Glyphs Part 2",
+                        "2.2.2. Parallel Coordinates",    "2.2.3. Stacked Graphs Part 1", "2.2.3. Stacked Graphs Part 2","2.3.1. Tufte's Design Rules",
+                        "2.3.2. Using Color","3.1.1. Graphs and Networks", "3.1.2. Embedding Planar Graphs",  "3.1.3. Graph Visualization",
+                        "3.1.4. Tree Maps", "3.2.1. Principal Component Analysis",  "3.2.2. Multidimensional Scaling","3.3.1. Packing",
+                        "4.1.1. Visualization Systems",  "4.1.2. The Information Visualization Mantra Part 1",      "4.1.2. The Information Visualization Mantra: Part 2",
+                        "4.1.2. The Information Visualization Mantra: Part 3",  "4.1.3. Database Visualization Part 1",  "4.1.3. Database Visualization Part 2",
+                        "4.1.3. Database Visualization Part 3", "4.2.1. Visualization System Design",  "SVG-example",
+                        "Week 1 Introduction","Week 2 Introduction","Week 3 Introduction","Week 4 Introduction") 
+
+## Creating a variable replacing module name
+MainData$NewModuleId[MainData$module_id == "\\\"module_id\\\":\\\"hYvka\\\""] = "hYvka"            
+MainData$NewModuleId[MainData$module_id == "\\\"module_id\\\":\\\"muisM\\\""] = "muisM"
+MainData$NewModuleId[MainData$module_id == "\\\"module_id\\\":\\\"pgrqZ\\\""] = "pgrqZ"
+MainData$NewModuleId[MainData$module_id == "\\\"module_id\\\":\\\"pnOrr\\\""] = "pnOrr"
+MainData$NewModuleId[MainData$module_id == "\\\"module_id\\\":\\\"\\\""] = "NAs"
+
+table(MainData$NewModuleId,MainData$NewVideoName)
+MainData$NewModuleId = factor(MainData$NewModuleId)
+
+# Creating a new table counting Keys for individual user 
+table(MainData$illinois_user_id)
+attach(MainData)
+counttable = cbind(aggregate(Keys=="dowbkiad_subtitle", by=list(illinois_user_id,NewModuleId,NewVideoName), sum),
+              aggregate(Keys=="download_video", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="end", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="heartbeat", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="pause", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="play", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="playback_rate_change", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="seek", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="start", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="subtitle_change", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="volume_change", by=list(illinois_user_id,NewVideoName), sum)[,3],
+              aggregate(Keys=="wait", by=list(illinois_user_id,NewVideoName), sum)[,3]
+              )
+colnames(counttable) = c("ID","module","Video","download_subtitle", "download_video","end","heartbeat","pause","play","playback_rate_change",
+                          "seek","start","subtitle_change", "volume_change","wait")
+detach(MainData)
+
+## Sorted data by ID
+counttable = counttable[order(counttable$ID),]
+
+## Creating HeartBeatTime as 0, so we can assign 5 seconds per observation
+MainData$HeartBeatTime = 0
+MainData$HeartBeatTime[MainData$Keys == "heartbeat"] = 5
+
+## Collapsiing the data frame
+
+#Sorting Variables
+MainDataSort = MainData[order(MainData$illinois_user_id, MainData$video_name),] #sorting
+
+#Dropping Variables and observation
+myvars = names(MainDataSort) %in% c("illinois_user_id",
+                                    "server_timestamp",
+                                    "country_cd",
+                                    "region_cd",
+                                    "Keys",
+                                    "NewVideoName",
+                                    "NewModuleId")
+
+MainDataSubset = MainDataSort[myvars]
+
+MainDataSubset = MainDataSubset[order(MainDataSubset$illinois_user_id, MainDataSubset$NewVideoName),] #sorting
+
+MainDataSubsetF = subset(MainDataSubset, MainDataSubset$Keys == "heartbeat"|
+                           MainDataSubset$Keys == "end"|
+                           MainDataSubset$Keys == "start"|
+                           MainDataSubset$Keys == "play"|
+                           MainDataSubset$Keys == "pause"|
+                           MainDataSubset$Keys == "wait"|
+                           MainDataSubset$Keys == "seek")
+
+MainDataSubsetF = droplevels(MainDataSubsetF)
+
+table(MainDataSubsetF$Keys)
+length(unique(MainDataSubsetF$illinois_user_id))
+length(unique(MainDataSubsetF$NewVideoName))
+
+names(MainDataSubsetF)
+
+MainDataSubsetF$NewID2 = paste(MainDataSubsetF$illinois_user_id, MainDataSubsetF$NewVideoName, MainDataSubsetF$Keys, sep = ",")
+
+MainDataSubsetF = MainDataSubsetF[order(MainDataSubsetF$server_timestamp),]
+
+
+
+mins = aggregate(MainDataSubsetF[ , c("NewID2", "server_timestamp")]  ,list(MainDataSubsetF$NewID2) , min)
+#mins_data = cSplit(as.data.table(mins), "NewID2", ",")
+colnames(mins) = c("Group","NewID2", "min_server_timestamp")
+
+maxi = aggregate(MainDataSubsetF[ , c("NewID2", "server_timestamp")]  ,list(MainDataSubsetF$NewID2) , max)
+#maxi_data = cSplit(as.data.table(maxi), "NewID2", ",")
+colnames(maxi) = c("Group","NewID2", "max_server_timestamp")
+
+NewMainData = merge(mins, maxi, by ="NewID2")
+myvars4 = names(NewMainData) %in% c("Group.y")
+NewMainData = NewMainData[!myvars4]
+names(NewMainData)
+
+NewMainData = cSplit(as.data.table(NewMainData), "NewID2", ",")
+names(NewMainData)
+colnames(NewMainData) = c("Group", "FirstTime", "LastTime", "UserID", "VideoName", "Keys")
+names(NewMainData)
+class(NewMainData)
+
+
+NewMainData2 = subset(NewMainData, select = c("Group", "FirstTime", "LastTime", "Keys"))
+
+NewMainData3 = melt(NewMainData2, id.vars = c("Group", "Keys"))
+
+names(NewMainData3)
+
+NewMainData4 = dcast(NewMainData3, Group + variable ~ Keys) #looks fine
+
+NewMainData5 = subset(NewMainData2, select = c("Group", "LastTime", "Keys"))
+
+NewMainData6 = melt(NewMainData5, id.vars = c("Group", "Keys"))
+
+names(NewMainData3)
+
+NewMainData7 = dcast(NewMainData6, Group + variable ~ Keys) #looks fine
+names(NewMainData7)
+NewMainData8 = cSplit(as.data.table(NewMainData7), "Group", ",")
+
+end = NewMainData8[complete.cases(NewMainData8$end), ]
+end2 = subset(end, select = c("end", "Group_1", "Group_2"))
+
+start = NewMainData8[complete.cases(NewMainData8$start), ]
+start2 = subset(start, select= c("start", "Group_1", "Group_2"))
+
+heartbeat = NewMainData8[complete.cases(NewMainData8$heartbeat), ]
+heartbeat2 = subset(heartbeat, select= c("heartbeat", "Group_1", "Group_2"))
+
+pause = NewMainData8[complete.cases(NewMainData8$pause), ]
+pause2 = subset(pause, select= c("pause", "Group_1", "Group_2"))
+
+play = NewMainData8[complete.cases(NewMainData8$play), ]
+play2 = subset(play, select= c("play", "Group_1", "Group_2"))
+
+seek = NewMainData8[complete.cases(NewMainData8$seek), ]
+seek2 = subset(seek, select= c("seek", "Group_1", "Group_2"))
+
+wait = NewMainData8[complete.cases(NewMainData8$wait), ]
+wait2 = subset(wait, select= c("wait", "Group_1", "Group_2"))
+
+StartEnd = merge(start2, end2, by = c("Group_1", "Group_2"))
+write.csv(StartEnd, "StartEnd.csv")
+
+StartEnd$MaxDuration = as.integer(abs((StartEnd$end - StartEnd$start)/60))
+
+StartEndNoOut = subset(StartEnd, StartEnd$MaxDuration <= 180 )
+
+## Working with Counttable
+
+counttable$HBMin = (counttable$heartbeat*5)/60
+
+HB = subset(counttable, select = c("ID", "Video", "HBMin"))
+
+HBAverage = aggregate(HB[,c("HBMin")], list(HB$ID, HB$Video), FUN = mean)
+colnames(HBAverage) = c("ID", "Video", "Avg_HB_Time")
+
+#HB3DGraphics = subset(HBAverage, HBAverage$Video == "1.2.3. 3-D Graphics" |
+#                        HBAverage$Video == "1.2.1. 2-D Graphics")
+
+HB3DGraphics = subset(HBAverage, HBAverage$Video == "1.2.3. 3-D Graphics")
+
+
+D1 <- ggplot(HB3DGraphics, aes(x = Avg_HB_Time, colour = Video)) + 
+  geom_density(position="identity", fill = NA, size = 1) +
+  scale_x_continuous(name = "Average Minutes",
+                     breaks = seq(0, 200, 25),
+                     limits=c(0, 50)) +
+  scale_y_continuous(name = "Density") +
+  ggtitle("Density plot of the average time invested in the video") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 14, family = "Tahoma", face = "bold"), 
+        text = element_text(size = 12, family = "Tahoma")) +
+  scale_colour_brewer(palette="Accent")
+D1
+
+testV6 = data.frame(StartEndNoOut$MaxDuration, StartEndNoOut$Group_1, StartEndNoOut$Group_2) 
+colnames(testV6) = c("maxduration", "ID", "Video")
+
+
+## TWO DENSITIES
+testV7 = merge(testV6, HB3DGraphics, by = c("ID", "Video"))
+
+ggplot() + geom_density(aes(x=maxduration), colour="red", data=testV7) + 
+  geom_density(aes(x=Avg_HB_Time), colour="blue", data=testV7)
+
+
+
+#StartEndNoOut3dGraphics = subset(StartEndNoOut, StartEndNoOut$Video == "1.2.3. 3-D Graphics" |
+#         HBAverage$Video == "1.2.1. 2-D Graphics")
+
+
+
+#D2 <- ggplot(StartEndNoOut, aes(x = MaxDuration, colour = Video)) + 
+#  geom_density(position="identity", fill = NA, size = 1) +
+#  scale_x_continuous(name = "Average Minutes",
+#                     breaks = seq(0, 200, 25),
+#                     limits=c(0, 60)) +
+#  scale_y_continuous(name = "Density") +
+#  ggtitle("Density plot of the average time invested in the video") +
+#  theme_bw() +
+#  theme(plot.title = element_text(size = 14, family = "Tahoma", face = "bold"), 
+#        text = element_text(size = 12, family = "Tahoma")) +
+#  scale_colour_brewer(palette="Accent")
+#D2
+
+
+############################################################################################
+############################### NEW DATA 11/30/2016 ######################################## 
+############################################################################################
+
+
+library(haven)
+#NewData = read_sav("Y:\\Private\\Internal\\Clients\\Coursera\\Practice Clickstream\\video-2016-10-22_all_courses_PARSED.sav")
+NewData = read_sav("Z:\\Private\\Internal\\Clients\\Coursera\\Practice Clickstream\\video-2016-10-22_all_courses_PARSED.sav")
+
+names(NewData)
+
+unique(NewData2$video_name)
+length(unique(NewData$video_name))
+NewData$video_name=str_trim(NewData$video_name, side = "both")
+
+NewData2 = data.frame(NewData)
+
+# Finding the video with the most frequent occurence
+which(table(NewData2$video_name) == max(table(NewData2$video_name)))
+names(which(table(NewData2$video_name) == max(table(NewData2$video_name))))
+
+# Subsetting the data 
+
+DigiConP1 = subset(NewData2, NewData2$video_name == "Digital Concept: User Generated Content, Part 2")
+names(DigiConP1)
+
+# Finding if there are na's
+sum(is.na(DigiConP1$timecode))
+
+# Eliminating the na's by subsetting the data
+NewData2 = subset(NewData2, !is.na(NewData2$timecode))
+DigiConP2 = subset(DigiConP1, !is.na(DigiConP1$timecode))
+
+# Checking the number of users and number of sessions
+length(unique(DigiConP2$hashed_session_cookie_id))
+length(unique(DigiConP2$illinois_user_id))
+# both coincide
+
+### Graphs ###
+
+# Pie Chart
+temp <- aggregate(NewData2$timecode, by=list(NewData2$video_name),FUN=mean)
+temp <- temp[order(temp[,2]),]
+
+# Histograms
+hist(DigiConP2$timecode, main = "User Generated Content, Part 2 length per User",
+     xlim = range(DigiConP2$timecode),
+     ylim = c(0,3000),
+     xlab = "Seconds") # for Digital Concept: User Generated Content, Part 2
+
+hist(NewData2$timecode, main = "All Videos length per User",
+     xlim = range(NewData2$timecode),
+     ylim = c(0,200000),
+     xlab = "Seconds") # for all videos
+
+
+# Densities
+DigiConP2 = DigiConP2[order(DigiConP2$illinois_user_id,
+                            DigiConP2$hashed_session_cookie_id),]
+
+DigiConP2$id = as.numeric(as.factor(DigiConP2$illinois_user_id))
+
+length(unique(DigiConP2$id))
+hist(DigiConP2$id)
+
+table(DigiConP2$id)
+# id 10 has 11773 obs, id 5 has 6 obs, id 6 has 5 obs, id 11 has 73 obs,
+# id 22 has 68 obs, id 27 has 27 obs and id 30 hast 19 obs. 
+#I deleted them in the next code line
+
+DigiConP3 = subset(DigiConP2, DigiConP2$id != 10 &
+                     DigiConP2$id != 5 &
+                     DigiConP2$id != 6 &
+                     DigiConP2$id != 11 &
+                     DigiConP2$id != 22 &
+                     DigiConP2$id != 27 &
+                     DigiConP2$id != 30)
+table(DigiConP3$id)
+
+# I created a new id
+DigiConP3$id2 = as.numeric(as.factor(DigiConP3$illinois_user_id))
+unique(DigiConP3$id2)
+table(DigiConP3$id2)
+
+# First Try
+M = ddply(DigiConP3, "illinois_user_id", summarise, rating.mean=mean(timecode))
+M
+
+density = ggplot(DigiConP3, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data=M, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+
+density
+
+# Subsetting by ID and making the graphs per groups
+
+DigiConP4 = DigiConP3[order(DigiConP3$illinois_user_id),] # sorting
+
+FirstGroup = subset(DigiConP4, DigiConP4$id2 == 1 |
+                    DigiConP4$id2 == 2 |
+                    DigiConP4$id2 == 3 |
+                    DigiConP4$id2 == 4 |
+                    DigiConP4$id2 == 5 |
+                    DigiConP4$id2 == 6 |
+                    DigiConP4$id2 == 7 |
+                    DigiConP4$id2 == 8 )
+
+MFG = ddply(FirstGroup, "illinois_user_id", summarise, rating.mean=mean(timecode))
+MFG
+mean(MFG$rating.mean)
+hist(MFG$rating.mean)
+
+DFG = ggplot(FirstGroup, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data = MFG, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+DFG
+
+SecondGroup = subset(DigiConP4, DigiConP4$id2 == 9 |
+                     DigiConP4$id2 == 10 |
+                     DigiConP4$id2 == 11 |
+                     DigiConP4$id2 == 12 |
+                     DigiConP4$id2 == 13 |
+                     DigiConP4$id2 == 14 |
+                     DigiConP4$id2 == 15 |
+                     DigiConP4$id2 == 16)
+
+MSG = ddply(SecondGroup, "illinois_user_id", summarise, rating.mean=mean(timecode))
+MSG
+mean(MSG$rating.mean)
+hist(MSG$rating.mean)
+
+DSG = ggplot(SecondGroup, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data = MSG, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+DSG
+
+ThirdGroup = subset(DigiConP4, DigiConP4$id2 == 17 |
+                    DigiConP4$id2 == 18 |
+                    DigiConP4$id2 == 19 |
+                    DigiConP4$id2 == 20 |
+                    DigiConP4$id2 == 21 |
+                    DigiConP4$id2 == 22 |
+                    DigiConP4$id2 == 23)
+
+MTG = ddply(ThirdGroup, "illinois_user_id", summarise, rating.mean=mean(timecode))
+MTG
+mean(MTG$rating.mean)
+hist(MTG$rating.mean)
+
+
+DSG = ggplot(ThirdGroup, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data=MTG, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+DSG
+
+FirstGroup$Group=1
+SecondGroup$Group=2
+ThirdGroup$Group=3
+allgroup <- rbind(FirstGroup,SecondGroup,ThirdGroup)
+
+# Getting pauses per user per video
+
+#Pauses = subset(DigiConP4, DigiConP4$key == "pause")
+
+# Creating a new table counting Keys for individual user 
+
+table(DigiConP4$illinois_user_id)
+attach(DigiConP4)
+KeyForDigiConP4 = cbind(aggregate(key=="dowbkiad_subtitle", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum),
+                   aggregate(key=="end", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="heartbeat", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="pause", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="play", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="playback_rate_change", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="seek", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="start", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="subtitle_change", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="volume_change", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="wait", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3])
+
+colnames(KeyForDigiConP4) = c("UserID","Video", "Delete", "end", "heartbeat","pause","play","playback_rate_change","seek","start",
+                         "subtitle_change","volume_change","wait")
+detach(DigiConP4)
+
+KeyForDigiConP4 = subset(KeyForDigiConP4, select = c("UserID","Video", "end", 
+                                                     "heartbeat","pause","play",
+                                                     "playback_rate_change","seek","start",
+                                                     "subtitle_change","volume_change","wait"))
+
+KeyForDigiConP4$Secs = KeyForDigiConP4$heartbeat * 5
+
+KeyForDigiConP4$InventedNames = unique(randomNames(n = 23), which.names = "last")
+
+plot(KeyForDigiConP4$Secs, KeyForDigiConP4$pause,
+     main = "Pause clicks per students in the video Digital Concept: User Generated Content, Part 2",
+     xlab = "Seconds",
+     ylab = "Number of Pause Clicks", 
+     pch=18, col = "blue")
+abline(v=mean(KeyForDigiConP4$Secs))
+abline(h=mean(KeyForDigiConP4$pause))
+text(KeyForDigiConP4$Secs, KeyForDigiConP4$pause, KeyForDigiConP4$InventedNames, pos = 3, cex= 0.6)
+
+
+plot(KeyForDigiConP4$Secs, KeyForDigiConP4$seek,
+     main = "Seek clicks per students in the video Digital Concept: User Generated Content, Part 2",
+     xlab = "Seconds",
+     ylab = "Number of Seek Clicks", 
+     pch=18, col = "red")
+abline(v=mean(KeyForDigiConP4$Secs))
+abline(h=mean(KeyForDigiConP4$seek))
+text(KeyForDigiConP4$Secs, KeyForDigiConP4$seek, KeyForDigiConP4$InventedNames, pos = 3, cex= 0.6)
+
+
+plot(KeyForDigiConP4$Secs, KeyForDigiConP4$wait,
+     main = "Wait clicks per students in the video Digital Concept: User Generated Content, Part 2",
+     xlab = "Seconds",
+     ylab = "Number of Wait Clicks", 
+     pch=18, col = "green")
+abline(v=mean(KeyForDigiConP4$Secs))
+abline(h=mean(KeyForDigiConP4$wait))
+text(KeyForDigiConP4$Secs, KeyForDigiConP4$wait, KeyForDigiConP4$InventedNames, pos = 3, cex= 0.6)
+
+
+
+#### For ALL videos
+
+table(NewData2$illinois_user_id)
+attach(NewData2)
+KeyForNewData2 = cbind(aggregate(key=="dowbkiad_subtitle", by=list(NewData2$illinois_user_id, NewData2$video_name), sum),
+                        aggregate(key=="end", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="heartbeat", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="pause", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="play", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="playback_rate_change", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="seek", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="start", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="subtitle_change", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="volume_change", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3],
+                        aggregate(key=="wait", by=list(NewData2$illinois_user_id, NewData2$video_name), sum)[,3])
+
+colnames(KeyForNewData2) = c("UserID","Video", "Delete", "end", "heartbeat","pause","play","playback_rate_change","seek","start",
+                              "subtitle_change","volume_change","wait")
+detach(NewData2)
+
+KeyForNewData2 = subset(KeyForNewData2, select = c("UserID","Video", "end", 
+                                                     "heartbeat","pause","play",
+                                                     "playback_rate_change","seek","start",
+                                                     "subtitle_change","volume_change","wait"))
+
+KeyForNewData2$Secs = KeyForNewData2$heartbeat * 5
+length(unique(KeyForNewData2$UserID))
+
+LastFirst = randomNames(n=2225, which.names = "last")
+
+
+for(i in 1:length(unique(KeyForNewData2$UserID))){
+  KeyForNewData2$InventedNames[i] = LastFirst[i]
+}
+
+length(unique(KeyForNewData2$InventedNames))
+
+
+plot(KeyForNewData2$Secs, KeyForNewData2$pause,
+     main = "Pause clicks per students per video",
+     xlab = "Seconds",
+     ylab = "Number of Pause Clicks", 
+     pch=18, col = "blue")
+abline(v=mean(KeyForNewData2$Secs))
+abline(h=mean(KeyForNewData2$pause))
+text(KeyForNewData2$Secs, KeyForNewData2$pause, KeyForNewData2$InventedNames, pos = 3, cex= 0.6)
+
+
+plot(KeyForNewData2$Secs, KeyForNewData2$seek,
+     main = "Seek clicks per students per video",
+     xlab = "Seconds",
+     ylab = "Number of Seek Clicks", 
+     pch=18, col = "red")
+abline(v=mean(KeyForNewData2$Secs))
+abline(h=mean(KeyForNewData2$seek))
+text(KeyForNewData2$Secs, KeyForNewData2$seek, KeyForNewData2$InventedNames, pos = 3, cex= 0.6)
+
+
+plot(KeyForNewData2$Secs, KeyForNewData2$wait,
+     main = "Wait clicks per students per video",
+     xlab = "Seconds",
+     ylab = "Number of Wait Clicks", 
+     pch=18, col = "green")
+abline(v=mean(KeyForNewData2$Secs))
+abline(h=mean(KeyForNewData2$wait))
+text(KeyForNewData2$Secs, KeyForNewData2$wait, KeyForNewData2$InventedNames, pos = 3, cex= 0.6)
+
+## Creating Types of Users for sample data
+
+# Getting top 3 frequencies
+sort(table(NewData2$video_name), decreasing =TRUE)[1:3]
+
+# Data tells the following
+ #Digital Concept: User Generated Content, Part 2 = 14707
+ #Process Types = 13312
+ #Process Flow Analysis = 10550 
+
+# Creating the Sample
+Sample = subset(NewData2, NewData2$video_name == "Digital Concept: User Generated Content, Part 2" |
+                  NewData2$video_name == "Process Types" |
+                  NewData2$video_name == "Process Flow Analysis")
+
+# Finding if there are na's
+sum(is.na(Sample$timecode))
+
+# Sorting by illinois_user_id
+Sample = Sample[order(Sample$illinois_user_id),]
+
+# Observing the Key frequencies by user and video
+
+table(Sample$illinois_user_id)
+attach(Sample)
+KeyForSample = cbind(aggregate(key=="dowbkiad_subtitle", by=list(Sample$illinois_user_id, Sample$video_name), sum),
+                       aggregate(key=="end", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="heartbeat", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="pause", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="play", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="playback_rate_change", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="seek", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="start", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="subtitle_change", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="volume_change", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="wait", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                     aggregate(timecode, by=list(Sample$illinois_user_id, Sample$video_name), mean)[,3])
+dim(KeyForSample)
+colnames(KeyForSample) = c("UserID","Video", "Delete", "end", "heartbeat","pause","play","playback_rate_change","seek","start",
+                             "subtitle_change","volume_change","wait", "timecode_avg")
+detach(Sample)
+
+KeyForSample = subset(KeyForSample, select = c("UserID","Video", "end",
+                                               "heartbeat","pause","play",
+                                               "playback_rate_change","seek",
+                                               "start","subtitle_change",
+                                               "volume_change","wait",
+                                               "timecode_avg"))
+
+KeyForSample$Secs = KeyForSample$heartbeat * 5
+length(unique(KeyForSample$UserID))
+
+## Classifying users by 
+# Playback_rate_change, seek and pauses
+
+KeyForSample$TypeOfUser = ifelse(KeyForSample$playback_rate_change == 0 & KeyForSample$seek <= 1 & KeyForSample$pause <=2, "NormalStudent",
+       ifelse(KeyForSample$playback_rate_change == 1 & KeyForSample$seek <= 2 & KeyForSample$pause >= 3, "Speeder", "NotLearning")
+table(KeyForSample$TypeOfUser)
+
+
+
+
+
+
+
+
+
