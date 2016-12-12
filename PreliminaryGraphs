@@ -1,13 +1,15 @@
 ########################
-### Pre-Shiny Graphs ###
+### PRE-SHINY GRAPHS ###
 ########################
 
+## This graphs would come from different objects 
+## based on those created on the ClickstreamPractice file
+
+# Let's pick only the first 2 objects: end2 and start2
+
 StartEnd = merge(start2, end2, by = c("Group_1", "Group_2"))
-write.csv(StartEnd, "StartEnd.csv")
-
-StartEnd$MaxDuration = as.integer(abs((StartEnd$end - StartEnd$start)/60))
-
-StartEndNoOut = subset(StartEnd, StartEnd$MaxDuration <= 180 )
+StartEnd$MaxDuration = as.integer(abs((StartEnd$end - StartEnd$start)/60)) # We found several outliers
+StartEndNoOut = subset(StartEnd, StartEnd$MaxDuration <= 180 ) # No outliers
 
 ## Working with Counttable
 
