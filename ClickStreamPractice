@@ -12,7 +12,6 @@ library(splitstackshape)
 library(doBy)
 library(ggplot2)
 library(foreign)
-library(randomNames)
 
 ### Setting Working Directory ###
 
@@ -123,21 +122,20 @@ MainDataSubset = MainDataSort[myvars]
 table(MainDataSubset$Keys)
 length(unique(MainDataSubset$illinois_user_id))
 length(unique(MainDataSubset$NewVideoName))
-names(MainDataSubsetF)
 
 # Creating NewID2 based on 3 potential IDs in the data
-MainDataSubset$NewID2 = paste(MainDataSubsetF$illinois_user_id, MainDataSubsetF$NewVideoName, MainDataSubsetF$Keys, sep = ",")
+MainDataSubset$NewID2 = paste(MainDataSubset$illinois_user_id, MainDataSubset$NewVideoName, MainDataSubset$Keys, sep = ",")
 
 # Sorting the Data by server_timestamp
 MainDataSubset = MainDataSubset[order(MainDataSubset$server_timestamp),]
 
 ### Creating a NewMainData: a new dataset containing the minimum and maximum of each key timestamp ###
 
-mins = aggregate(MainDataSubsetF[ , c("NewID2", "server_timestamp")]  ,list(MainDataSubsetF$NewID2) , min)
+mins = aggregate(MainDataSubset[ , c("NewID2", "server_timestamp")]  ,list(MainDataSubset$NewID2) , min)
 #mins_data = cSplit(as.data.table(mins), "NewID2", ",")
 colnames(mins) = c("Group","NewID2", "min_server_timestamp")
 
-maxi = aggregate(MainDataSubsetF[ , c("NewID2", "server_timestamp")]  ,list(MainDataSubsetF$NewID2) , max)
+maxi = aggregate(MainDataSubset[ , c("NewID2", "server_timestamp")]  ,list(MainDataSubset$NewID2) , max)
 #maxi_data = cSplit(as.data.table(maxi), "NewID2", ",")
 colnames(maxi) = c("Group","NewID2", "max_server_timestamp")
 
@@ -156,7 +154,7 @@ NewMainData2 = subset(NewMainData, select = c("Group", "FirstTime", "LastTime", 
 # Reshaping our new data
 melt.NewMainData = melt(NewMainData2, id.vars = c("Group", "Keys"))
 dcast.NewMainData = dcast(melt.NewMainData, Group + variable ~ Keys)
-split.NewMainData = cSplit(as.data.table(dcast.NewMainData7), "Group", ",")
+split.NewMainData = cSplit(as.data.table(dcast.NewMainData), "Group", ",")
 
 ### Creating the final dataset ###
 
@@ -196,8 +194,6 @@ volume2 = subset(volume, select= c("volume_change", "Group_1", "Group_2"))
 
 downloadsub = split.NewMainData[complete.cases(split.NewMainData$download_subtitle), ]
 downloads2 = subset(downloadsub, select= c("download_subtitle", "Group_1", "Group_2"))
-
-####### CHANGE TO 0 ALL NA'S #####
 
 
 StartEnd = merge(start2, end2, by = c("Group_1", "Group_2"))
