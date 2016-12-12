@@ -5,6 +5,7 @@
 ### Libraries ###
 library(stringr)
 library(reshape)
+library(reshape2)
 library(dplyr)
 library(plyr)
 library(data.table)
@@ -12,6 +13,7 @@ library(splitstackshape)
 library(doBy)
 library(ggplot2)
 library(foreign)
+#library(randomNames)
 
 ### Setting Working Directory ###
 
@@ -149,7 +151,7 @@ NewMainData = cSplit(as.data.table(NewMainData), "NewID2", ",")
 colnames(NewMainData) = c("Group", "FirstTime", "LastTime", "UserID", "VideoName", "Keys")
 
 # Keeping only those variables of interest
-NewMainData2 = subset(NewMainData, select = c("Group", "FirstTime", "LastTime", "Keys"))
+NewMainData2 = subset(NewMainData, select = c("Group", "FirstTime", "Keys"))
 
 # Reshaping our new data
 melt.NewMainData = melt(NewMainData2, id.vars = c("Group", "Keys"))
@@ -161,6 +163,7 @@ split.NewMainData = cSplit(as.data.table(dcast.NewMainData), "Group", ",")
 # Creating individual vectors by key
 end = split.NewMainData[complete.cases(split.NewMainData$end), ]
 end2 = subset(end, select = c("end", "Group_1", "Group_2"))
+
 
 start = split.NewMainData[complete.cases(split.NewMainData$start), ]
 start2 = subset(start, select= c("start", "Group_1", "Group_2"))
@@ -194,6 +197,13 @@ volume2 = subset(volume, select= c("volume_change", "Group_1", "Group_2"))
 
 downloadsub = split.NewMainData[complete.cases(split.NewMainData$download_subtitle), ]
 downloads2 = subset(downloadsub, select= c("download_subtitle", "Group_1", "Group_2"))
+
+list_df = list(end2, start2, heartbeat2, pause2, play2, seek2, wait2,
+                subtitle2, playbackrate2)
+
+FinalDataSet = merge_all(list_df)
+head(FinalDataSet)
+
 
 
 StartEnd = merge(start2, end2, by = c("Group_1", "Group_2"))
