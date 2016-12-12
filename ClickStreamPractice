@@ -203,3 +203,5 @@ list_df = list(end2, start2, heartbeat2, pause2, play2, seek2, wait2,
 
 FinalDataSet = merge_all(list_df)
 head(FinalDataSet)
+
+write.csv(FinalDataSet, "FinalDataSet.csv")
