@@ -1,0 +1,282 @@
+
+library(haven)
+
+TimecodeData = read_sav("Z:\\Private\\Internal\\Clients\\Coursera\\Practice Clickstream\\video-2016-10-22_all_courses_PARSED.sav")
+
+names(TimecodeData)
+
+## Cleaning the data ##
+
+TimecodeData$video_name = str_trim(TimecodeData$video_name, side = "both") #Eliminating the white space from start and end of string.
+TimecodeData = data.frame(TimecodeData) #Making sure we have a dataframe object. 
+
+## Finding the video with the most frequent occurence ##
+
+names(which(table(TimecodeData$video_name) == max(table(TimecodeData$video_name)))) #Finding which video is the most frequent.
+which(table(TimecodeData$video_name) == max(table(TimecodeData$video_name))) #Finding how frequent the video is.
+
+#We found that "Digital Concept: User Generated Content, Part 2" is the most frequent video. 
+#We are subsetting the data based on that video
+
+## Subsetting the data ##
+
+DigiConP1 = subset(TimecodeData, TimecodeData$video_name == "Digital Concept: User Generated Content, Part 2")
+names(DigiConP1)
+
+# Finding if there are na's
+sum(is.na(DigiConP1$timecode))
+
+# Eliminating the na's by subsetting the data
+TimecodeData = subset(TimecodeData, !is.na(TimecodeData$timecode)) #Eliminatings NA's in the main data.
+DigiConP2 = subset(DigiConP1, !is.na(DigiConP1$timecode)) #Eliminating NA's in the data subset.
+
+# Checking the number of users and number of sessions
+length(unique(DigiConP2$hashed_session_cookie_id))
+length(unique(DigiConP2$illinois_user_id))
+
+#both coincide, meaning that every user have watch the video in the same session
+
+# Histograms
+hist(DigiConP2$timecode, main = "User Generated Content, Part 2 length per User",
+     xlim = range(DigiConP2$timecode),
+     ylim = c(0,3000),
+     xlab = "Seconds") # for Digital Concept: User Generated Content, Part 2
+
+hist(TimecodeData$timecode, main = "All Videos length per User",
+     xlim = range(TimecodeData$timecode),
+     ylim = c(0,200000),
+     xlab = "Seconds") # for all videos
+
+
+# Sorting data by user and session
+DigiConP2 = DigiConP2[order(DigiConP2$illinois_user_id,
+                            DigiConP2$hashed_session_cookie_id),]
+
+DigiConP2$id = as.numeric(as.factor(DigiConP2$illinois_user_id))
+
+length(unique(DigiConP2$id))
+hist(DigiConP2$id)
+
+table(DigiConP2$id)
+# id 10 has 11773 obs, id 5 has 6 obs, id 6 has 5 obs, id 11 has 73 obs,
+# id 22 has 68 obs, id 27 has 27 obs and id 30 hast 19 obs. 
+#I deleted them in the next code line
+
+DigiConP3 = subset(DigiConP2, DigiConP2$id != 10 &
+                     DigiConP2$id != 5 &
+                     DigiConP2$id != 6 &
+                     DigiConP2$id != 11 &
+                     DigiConP2$id != 22 &
+                     DigiConP2$id != 27 &
+                     DigiConP2$id != 30)
+table(DigiConP3$id)
+
+# Creating a new consecutive id
+
+DigiConP3$id2 = as.numeric(as.factor(DigiConP3$illinois_user_id))
+unique(DigiConP3$id2)
+table(DigiConP3$id2)
+
+# Densities for the time All Users spent watching Digital Concept: User Generated Content, Part 2
+M = ddply(DigiConP3, "illinois_user_id", summarise, rating.mean=mean(timecode))
+M
+
+density = ggplot(DigiConP3, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data=M, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+
+density
+
+# Subsetting by ID and making the graphs per groups
+
+DigiConP4 = DigiConP3[order(DigiConP3$illinois_user_id),] # sorting
+
+FirstGroup = subset(DigiConP4, DigiConP4$id2 == 1 |
+                    DigiConP4$id2 == 2 |
+                    DigiConP4$id2 == 3 |
+                    DigiConP4$id2 == 4 |
+                    DigiConP4$id2 == 5 |
+                    DigiConP4$id2 == 6 |
+                    DigiConP4$id2 == 7 |
+                    DigiConP4$id2 == 8 )
+
+MFG = ddply(FirstGroup, "illinois_user_id", summarise, rating.mean=mean(timecode))
+MFG
+mean(MFG$rating.mean)
+hist(MFG$rating.mean)
+
+DFG = ggplot(FirstGroup, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data = MFG, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+DFG
+
+SecondGroup = subset(DigiConP4, DigiConP4$id2 == 9 |
+                     DigiConP4$id2 == 10 |
+                     DigiConP4$id2 == 11 |
+                     DigiConP4$id2 == 12 |
+                     DigiConP4$id2 == 13 |
+                     DigiConP4$id2 == 14 |
+                     DigiConP4$id2 == 15 |
+                     DigiConP4$id2 == 16)
+
+MSG = ddply(SecondGroup, "illinois_user_id", summarise, rating.mean=mean(timecode))
+MSG
+mean(MSG$rating.mean)
+hist(MSG$rating.mean)
+
+DSG = ggplot(SecondGroup, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data = MSG, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+DSG
+
+ThirdGroup = subset(DigiConP4, DigiConP4$id2 == 17 |
+                    DigiConP4$id2 == 18 |
+                    DigiConP4$id2 == 19 |
+                    DigiConP4$id2 == 20 |
+                    DigiConP4$id2 == 21 |
+                    DigiConP4$id2 == 22 |
+                    DigiConP4$id2 == 23)
+
+MTG = ddply(ThirdGroup, "illinois_user_id", summarise, rating.mean=mean(timecode))
+MTG
+mean(MTG$rating.mean)
+hist(MTG$rating.mean)
+
+
+DSG = ggplot(ThirdGroup, aes(timecode, color = illinois_user_id)) + 
+  geom_density(alpha=.5) + 
+  geom_vline(data=MTG, aes(xintercept=rating.mean, colour = illinois_user_id),
+             linetype="dashed", size=1) +
+  theme(legend.position="none")
+DSG
+
+# Creating a new table counting Keys for individual user 
+
+table(DigiConP4$illinois_user_id)
+attach(DigiConP4)
+KeyForDigiConP4 = cbind(aggregate(key=="download_subtitle", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum),
+                   aggregate(key=="end", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="heartbeat", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="pause", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="play", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="playback_rate_change", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="seek", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="start", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="subtitle_change", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="volume_change", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3],
+                   aggregate(key=="wait", by=list(DigiConP4$illinois_user_id, DigiConP4$video_name), sum)[,3])
+
+colnames(KeyForDigiConP4) = c("UserID","Video", "Delete", "end", "heartbeat","pause","play","playback_rate_change","seek","start",
+                         "subtitle_change","volume_change","wait")
+
+
+KeyForDigiConP4 = subset(KeyForDigiConP4, select = c("UserID","Video", "end", 
+                                                     "heartbeat","pause","play",
+                                                     "playback_rate_change","seek","start",
+                                                     "subtitle_change","volume_change","wait"))
+detach(DigiConP4)
+
+# Creating a variable Secs based on Heartbeat
+
+KeyForDigiConP4$Secs = KeyForDigiConP4$heartbeat * 5
+
+## Graphs based on users for  the video Digital Concept: User Generated Content, Part 2
+
+# Plot: Pause clicks per students
+plot(KeyForDigiConP4$Secs, KeyForDigiConP4$pause,
+     main = "Pause clicks per students in the video Digital Concept: User Generated Content, Part 2",
+     xlab = "Seconds",
+     ylab = "Number of Pause Clicks", 
+     pch=18, col = "blue")
+abline(v=mean(KeyForDigiConP4$Secs))
+abline(h=mean(KeyForDigiConP4$pause))
+text(KeyForDigiConP4$Secs, KeyForDigiConP4$pause, KeyForDigiConP4$InventedNames, pos = 3, cex= 0.6)
+
+# Plot: Seek clicks per students
+plot(KeyForDigiConP4$Secs, KeyForDigiConP4$seek,
+     main = "Seek clicks per students in the video Digital Concept: User Generated Content, Part 2",
+     xlab = "Seconds",
+     ylab = "Number of Seek Clicks", 
+     pch=18, col = "red")
+abline(v=mean(KeyForDigiConP4$Secs))
+abline(h=mean(KeyForDigiConP4$seek))
+text(KeyForDigiConP4$Secs, KeyForDigiConP4$seek, KeyForDigiConP4$InventedNames, pos = 3, cex= 0.6)
+
+# Wait clicks per students
+plot(KeyForDigiConP4$Secs, KeyForDigiConP4$wait,
+     main = "Wait clicks per students in the video Digital Concept: User Generated Content, Part 2",
+     xlab = "Seconds",
+     ylab = "Number of Wait Clicks", 
+     pch=18, col = "green")
+abline(v=mean(KeyForDigiConP4$Secs))
+abline(h=mean(KeyForDigiConP4$wait))
+text(KeyForDigiConP4$Secs, KeyForDigiConP4$wait, KeyForDigiConP4$InventedNames, pos = 3, cex= 0.6)
+
+
+## Graphs For ALL videos
+
+table(TimecodeData$illinois_user_id)
+attach(TimecodeData)
+KeyForTimecodeData = cbind(aggregate(key=="dowbkiad_subtitle", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum),
+                        aggregate(key=="end", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="heartbeat", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="pause", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="play", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="playback_rate_change", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="seek", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="start", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="subtitle_change", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="volume_change", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3],
+                        aggregate(key=="wait", by=list(TimecodeData$illinois_user_id, TimecodeData$video_name), sum)[,3])
+
+colnames(KeyForTimecodeData) = c("UserID","Video", "Delete", "end", "heartbeat","pause","play","playback_rate_change","seek","start",
+                              "subtitle_change","volume_change","wait")
+
+KeyForTimecodeData = subset(KeyForTimecodeData, select = c("UserID","Video", "end", 
+                                                     "heartbeat","pause","play",
+                                                     "playback_rate_change","seek","start",
+                                                     "subtitle_change","volume_change","wait"))
+detach(KeyForTimecodeData)
+
+KeyForTimecodeData$Secs = KeyForTimecodeData$heartbeat * 5
+length(unique(KeyForTimecodeData$UserID))
+
+
+plot(KeyForTimecodeData$Secs, KeyForTimecodeData$pause,
+     main = "Pause clicks per students per video",
+     xlab = "Seconds",
+     ylab = "Number of Pause Clicks", 
+     pch=18, col = "blue")
+abline(v=mean(KeyForTimecodeData$Secs))
+abline(h=mean(KeyForTimecodeData$pause))
+#text(KeyForTimecodeData$Secs, KeyForTimecodeData$pause, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
+
+
+plot(KeyForTimecodeData$Secs, KeyForTimecodeData$seek,
+     main = "Seek clicks per students per video",
+     xlab = "Seconds",
+     ylab = "Number of Seek Clicks", 
+     pch=18, col = "red")
+abline(v=mean(KeyForTimecodeData$Secs))
+abline(h=mean(KeyForTimecodeData$seek))
+#text(KeyForTimecodeData$Secs, KeyForTimecodeData$seek, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
+
+
+plot(KeyForTimecodeData$Secs, KeyForTimecodeData$wait,
+     main = "Wait clicks per students per video",
+     xlab = "Seconds",
+     ylab = "Number of Wait Clicks", 
+     pch=18, col = "green")
+abline(v=mean(KeyForTimecodeData$Secs))
+abline(h=mean(KeyForTimecodeData$wait))
+#text(KeyForTimecodeData$Secs, KeyForTimecodeData$wait, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
+
+
+
+
