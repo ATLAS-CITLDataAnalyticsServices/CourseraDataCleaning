@@ -2,6 +2,8 @@
 ### PRE-SHINY GRAPHS ###
 ########################
 
+#### Continuation of the PracticeClickStream Code ####
+
 # Creating the KeyForMainData table showing the count of every Key #
 
 table(MainData$illinois_user_id)
