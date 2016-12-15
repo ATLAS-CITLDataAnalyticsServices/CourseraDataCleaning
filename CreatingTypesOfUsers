@@ -1,0 +1,56 @@
+# Getting top 3 frequencies
+sort(table(MainData$NewVideoName), decreasing =TRUE)[1:3]
+
+# Data tells the following
+ #Digital Concept: User Generated Content, Part 2 = 14707
+ #Process Types = 13312
+ #Process Flow Analysis = 10550 
+
+# Creating the Sample
+Sample = subset(MainData, MainData$NewVideoName == "Digital Concept: User Generated Content, Part 2" |
+                  MainData$NewVideoName == "Process Types" |
+                  MainData$NewVideoName == "Process Flow Analysis")
+
+# Finding if there are na's
+sum(is.na(Sample$timecode))
+
+# Sorting by illinois_user_id
+Sample = Sample[order(Sample$illinois_user_id),]
+
+# Observing the Key frequencies by user and video
+
+table(Sample$illinois_user_id)
+attach(Sample)
+KeyForSample = cbind(aggregate(key=="dowbkiad_subtitle", by=list(Sample$illinois_user_id, Sample$video_name), sum),
+                       aggregate(key=="end", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="heartbeat", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="pause", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="play", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="playback_rate_change", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="seek", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="start", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="subtitle_change", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="volume_change", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                       aggregate(key=="wait", by=list(Sample$illinois_user_id, Sample$video_name), sum)[,3],
+                     aggregate(timecode, by=list(Sample$illinois_user_id, Sample$video_name), mean)[,3])
+dim(KeyForSample)
+colnames(KeyForSample) = c("UserID","Video", "Delete", "end", "heartbeat","pause","play","playback_rate_change","seek","start",
+                             "subtitle_change","volume_change","wait", "timecode_avg")
+detach(Sample)
+
+KeyForSample = subset(KeyForSample, select = c("UserID","Video", "end",
+                                               "heartbeat","pause","play",
+                                               "playback_rate_change","seek",
+                                               "start","subtitle_change",
+                                               "volume_change","wait",
+                                               "timecode_avg"))
+
+KeyForSample$Secs = KeyForSample$heartbeat * 5
+length(unique(KeyForSample$UserID))
+
+## Classifying users by 
+# Playback_rate_change, seek and pauses
+
+KeyForSample$TypeOfUser = ifelse(KeyForSample$playback_rate_change == 0 & KeyForSample$seek <= 1 & KeyForSample$pause <=2, "NormalStudent",
+       ifelse(KeyForSample$playback_rate_change == 1 & KeyForSample$seek <= 2 & KeyForSample$pause >= 3, "Speeder", "NotLearning")
+table(KeyForSample$TypeOfUser)
