@@ -256,7 +256,6 @@ plot(KeyForTimecodeData$Secs, KeyForTimecodeData$pause,
      pch=18, col = "blue")
 abline(v=mean(KeyForTimecodeData$Secs))
 abline(h=mean(KeyForTimecodeData$pause))
-#text(KeyForTimecodeData$Secs, KeyForTimecodeData$pause, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
 
 plot(KeyForTimecodeData$Secs, KeyForTimecodeData$seek,
      main = "Seek clicks per students per video",
@@ -265,7 +264,6 @@ plot(KeyForTimecodeData$Secs, KeyForTimecodeData$seek,
      pch=18, col = "red")
 abline(v=mean(KeyForTimecodeData$Secs))
 abline(h=mean(KeyForTimecodeData$seek))
-#text(KeyForTimecodeData$Secs, KeyForTimecodeData$seek, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
 
 plot(KeyForTimecodeData$Secs, KeyForTimecodeData$wait,
      main = "Wait clicks per students per video",
@@ -274,8 +272,4 @@ plot(KeyForTimecodeData$Secs, KeyForTimecodeData$wait,
      pch=18, col = "green")
 abline(v=mean(KeyForTimecodeData$Secs))
 abline(h=mean(KeyForTimecodeData$wait))
-#text(KeyForTimecodeData$Secs, KeyForTimecodeData$wait, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
-
-
-
 
