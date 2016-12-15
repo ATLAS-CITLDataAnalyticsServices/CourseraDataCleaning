@@ -4,8 +4,8 @@
 
 library(haven)
 
+## Calling the Data
 TimecodeData = read_sav("Z:\\Private\\Internal\\Clients\\Coursera\\Practice Clickstream\\video-2016-10-22_all_courses_PARSED.sav")
-
 names(TimecodeData)
 
 ## Cleaning the data ##
@@ -36,8 +36,9 @@ DigiConP2 = subset(DigiConP1, !is.na(DigiConP1$timecode)) #Eliminating NA's in t
 # Checking the number of users and number of sessions
 length(unique(DigiConP2$hashed_session_cookie_id))
 length(unique(DigiConP2$illinois_user_id))
-
 #both coincide, meaning that every user have watch the video in the same session
+
+## Exploratory Graphs
 
 # Histograms
 hist(DigiConP2$timecode, main = "User Generated Content, Part 2 length per User",
@@ -49,7 +50,6 @@ hist(TimecodeData$timecode, main = "All Videos length per User",
      xlim = range(TimecodeData$timecode),
      ylim = c(0,200000),
      xlab = "Seconds") # for all videos
-
 
 # Sorting data by user and session
 DigiConP2 = DigiConP2[order(DigiConP2$illinois_user_id,
@@ -63,7 +63,6 @@ hist(DigiConP2$id)
 table(DigiConP2$id)
 # id 10 has 11773 obs, id 5 has 6 obs, id 6 has 5 obs, id 11 has 73 obs,
 # id 22 has 68 obs, id 27 has 27 obs and id 30 hast 19 obs. 
-#I deleted them in the next code line
 
 DigiConP3 = subset(DigiConP2, DigiConP2$id != 10 &
                      DigiConP2$id != 5 &
@@ -72,13 +71,16 @@ DigiConP3 = subset(DigiConP2, DigiConP2$id != 10 &
                      DigiConP2$id != 22 &
                      DigiConP2$id != 27 &
                      DigiConP2$id != 30)
+#I deleted the outliers
+
 table(DigiConP3$id)
 
 # Creating a new consecutive id
-
 DigiConP3$id2 = as.numeric(as.factor(DigiConP3$illinois_user_id))
 unique(DigiConP3$id2)
 table(DigiConP3$id2)
+
+## Density Graphs ##
 
 # Densities for the time All Users spent watching Digital Concept: User Generated Content, Part 2
 M = ddply(DigiConP3, "illinois_user_id", summarise, rating.mean=mean(timecode))
@@ -151,7 +153,6 @@ MTG
 mean(MTG$rating.mean)
 hist(MTG$rating.mean)
 
-
 DSG = ggplot(ThirdGroup, aes(timecode, color = illinois_user_id)) + 
   geom_density(alpha=.5) + 
   geom_vline(data=MTG, aes(xintercept=rating.mean, colour = illinois_user_id),
@@ -159,7 +160,7 @@ DSG = ggplot(ThirdGroup, aes(timecode, color = illinois_user_id)) +
   theme(legend.position="none")
 DSG
 
-# Creating a new table counting Keys for individual user 
+## Creating a new table counting Keys for individual user ##
 
 table(DigiConP4$illinois_user_id)
 attach(DigiConP4)
@@ -186,10 +187,9 @@ KeyForDigiConP4 = subset(KeyForDigiConP4, select = c("UserID","Video", "end",
 detach(DigiConP4)
 
 # Creating a variable Secs based on Heartbeat
-
 KeyForDigiConP4$Secs = KeyForDigiConP4$heartbeat * 5
 
-## Graphs based on users for  the video Digital Concept: User Generated Content, Part 2
+## Graphs based on users for  the video Digital Concept: User Generated Content, Part 2 ##
 
 # Plot: Pause clicks per students
 plot(KeyForDigiConP4$Secs, KeyForDigiConP4$pause,
@@ -221,8 +221,7 @@ abline(v=mean(KeyForDigiConP4$Secs))
 abline(h=mean(KeyForDigiConP4$wait))
 text(KeyForDigiConP4$Secs, KeyForDigiConP4$wait, KeyForDigiConP4$InventedNames, pos = 3, cex= 0.6)
 
-
-## Graphs For ALL videos
+## Graphs For ALL videos ##
 
 table(TimecodeData$illinois_user_id)
 attach(TimecodeData)
@@ -250,7 +249,6 @@ detach(KeyForTimecodeData)
 KeyForTimecodeData$Secs = KeyForTimecodeData$heartbeat * 5
 length(unique(KeyForTimecodeData$UserID))
 
-
 plot(KeyForTimecodeData$Secs, KeyForTimecodeData$pause,
      main = "Pause clicks per students per video",
      xlab = "Seconds",
@@ -260,7 +258,6 @@ abline(v=mean(KeyForTimecodeData$Secs))
 abline(h=mean(KeyForTimecodeData$pause))
 #text(KeyForTimecodeData$Secs, KeyForTimecodeData$pause, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
 
-
 plot(KeyForTimecodeData$Secs, KeyForTimecodeData$seek,
      main = "Seek clicks per students per video",
      xlab = "Seconds",
@@ -269,7 +266,6 @@ plot(KeyForTimecodeData$Secs, KeyForTimecodeData$seek,
 abline(v=mean(KeyForTimecodeData$Secs))
 abline(h=mean(KeyForTimecodeData$seek))
 #text(KeyForTimecodeData$Secs, KeyForTimecodeData$seek, KeyForTimecodeData$InventedNames, pos = 3, cex= 0.6)
-
 
 plot(KeyForTimecodeData$Secs, KeyForTimecodeData$wait,
      main = "Wait clicks per students per video",
