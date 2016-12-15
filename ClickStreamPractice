@@ -204,4 +204,96 @@ list_df = list(end2, start2, heartbeat2, pause2, play2, seek2, wait2,
 FinalDataSet = merge_all(list_df)
 head(FinalDataSet)
 
-write.csv(FinalDataSet, "FinalDataSet.csv")
+write.csv(FinalDataSet, "FinalDataSet.csv") #Just in case you want to double check the output
+
+
+########################
+### PRE-SHINY GRAPHS ###
+########################
+
+#### Continuation of the PracticeClickStream Code ####
+
+# Creating the KeyForMainData table showing the count of every Key #
+
+table(MainData$illinois_user_id)
+names(MainData)
+attach(MainData)
+KeyForMainData = cbind(aggregate(Keys=="download_subtitle", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum),
+                      aggregate(Keys=="end", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="heartbeat", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="pause", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="play", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="playback_rate_change", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="seek", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="start", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="subtitle_change", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="volume_change", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3],
+                      aggregate(Keys=="wait", by=list(MainData$illinois_user_id, MainData$NewVideoName), sum)[,3])
+
+colnames(KeyForMainData) = c("UserID","Video", "Delete", "end", "heartbeat","pause","play","playback_rate_change","seek","start",
+                            "subtitle_change","volume_change","wait")
+
+KeyForMainData = subset(KeyForMainData, select = c("UserID","Video", "end", "heartbeat",
+                                                   "pause","play","playback_rate_change",
+                                                   "seek","start", "subtitle_change",
+                                                   "volume_change","wait"))
+detach(MainData)
+
+## Working with KeyForMainData Table and subseting it for the video called HB3DGraphics ##
+
+KeyForMainData$HBMin = (KeyForMainData$heartbeat*5)/60
+
+HB = subset(KeyForMainData, select = c("UserID", "Video", "HBMin"))
+
+HBAverage = aggregate(HB[,c("HBMin")], list(HB$UserID, HB$Video), FUN = mean)
+colnames(HBAverage) = c("ID", "Video", "Avg_HB_Time")
+
+HB3DGraphics = subset(HBAverage, HBAverage$Video == "1.2.3. 3-D Graphics")
+
+# Creating HB3DGraphics Density Graph (D1)
+D1 <- ggplot(HB3DGraphics, aes(x = Avg_HB_Time, colour = Video)) + 
+  geom_density(position="identity", fill = NA, size = 1) +
+  scale_x_continuous(name = "Average Minutes",
+                     breaks = seq(0, 200, 25),
+                     limits=c(0, 50)) +
+  scale_y_continuous(name = "Density") +
+  ggtitle("Density plot of the average time invested in the video") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 14, family = "Tahoma", face = "bold"), 
+        text = element_text(size = 12, family = "Tahoma")) +
+  scale_colour_brewer(palette="Accent")
+D1
+
+## Using Objects end2 and start2 from ClickStreamPractice to work on graphs ##
+
+StartEnd = merge(start2, end2, by = c("Group_1", "Group_2"))
+StartEnd$MaxDuration = as.integer(abs((StartEnd$end - StartEnd$start)/60)) # We found several outliers
+StartEndNoOut = subset(StartEnd, StartEnd$MaxDuration <= 180 ) # No outliers
+
+# Creating a data frame that counts the minutes of videos maximum duration
+MaxDurDF = data.frame(StartEndNoOut$MaxDuration, StartEndNoOut$Group_1, StartEndNoOut$Group_2) 
+colnames(MaxDurDF) = c("maxduration", "ID", "Video")
+
+# Merging HB3DGraphics and MaxDurDF
+maxDurVSavg = merge(MaxDurDF, HB3DGraphics, by = c("ID", "Video"))
+
+# Creating a graph that potentially shows how a particular video watched minutes compares with all videos
+ggplot() + geom_density(aes(x=maxduration), colour="red", data = maxDurVSavg) + 
+  geom_density(aes(x=Avg_HB_Time), colour="blue", data = maxDurVSavg) +
+  ggtitle("Maximum Duration Vs Average time spent watching All Videos") +
+  scale_colour_manual(values=c("blue", "red"))
+
+# Creating density graph (D2): a graph for the Average Video Duration for All Videos
+D2 <- ggplot(StartEndNoOut, aes(x = MaxDuration, colour = Group_2)) + 
+  geom_density(position="identity", fill = NA, size = 1) +
+  scale_x_continuous(name = "Average Minutes",
+                     breaks = seq(0, 200, 25),
+                     limits=c(0, 60)) +
+  scale_y_continuous(name = "Density") +
+  ggtitle("Density plot of the average time invested in the video") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 14, family = "Tahoma", face = "bold"), 
+        text = element_text(size = 12, family = "Tahoma")) +
+  scale_colour_brewer(palette="Accent")
+D2
+
